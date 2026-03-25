@@ -1,0 +1,988 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PrimeTrade — Binance Futures Testnet Bot</title>
+    <meta name="description" content="PrimeTrade: A Binance Futures Testnet trading bot with web UI. Built by Vishwa Panchal.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        /* ═══════════════════════ DESIGN TOKENS ═══════════════════════ */
+        :root {
+            --bg-primary: #0a0e1a;
+            --bg-secondary: #111827;
+            --bg-card: rgba(17, 24, 39, 0.7);
+            --bg-glass: rgba(255, 255, 255, 0.03);
+            --border-glass: rgba(255, 255, 255, 0.08);
+            --accent-cyan: #06b6d4;
+            --accent-emerald: #10b981;
+            --accent-red: #ef4444;
+            --accent-amber: #f59e0b;
+            --accent-purple: #a855f7;
+            --accent-blue: #3b82f6;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --gradient-cyan: linear-gradient(135deg, #06b6d4, #3b82f6);
+            --gradient-emerald: linear-gradient(135deg, #10b981, #06b6d4);
+            --gradient-red: linear-gradient(135deg, #ef4444, #f59e0b);
+            --glow-cyan: 0 0 30px rgba(6, 182, 212, 0.15);
+            --glow-emerald: 0 0 30px rgba(16, 185, 129, 0.15);
+            --radius: 16px;
+            --radius-sm: 10px;
+            --radius-xs: 6px;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* ═══════════════════════ RESET & BASE ═══════════════════════ */
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background:
+                radial-gradient(ellipse 600px 400px at 20% 10%, rgba(6, 182, 212, 0.06), transparent),
+                radial-gradient(ellipse 500px 500px at 80% 80%, rgba(168, 85, 247, 0.05), transparent);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* ═══════════════════════ SCROLLBAR ═══════════════════════ */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--text-muted); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--text-secondary); }
+
+        /* ═══════════════════════ LAYOUT ═══════════════════════ */
+        .app-container {
+            position: relative;
+            z-index: 1;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        /* ═══════════════════════ HEADER ═══════════════════════ */
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 20px 32px;
+            background: var(--bg-card);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius);
+            margin-bottom: 32px;
+            animation: slideDown 0.6s ease-out;
+        }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .header-brand {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .header-logo {
+            width: 44px; height: 44px;
+            background: var(--gradient-cyan);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            font-weight: 800;
+            box-shadow: var(--glow-cyan);
+        }
+
+        .header-title {
+            font-size: 22px;
+            font-weight: 700;
+            background: var(--gradient-cyan);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .header-subtitle {
+            font-size: 12px;
+            color: var(--text-muted);
+            font-weight: 500;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .header-badge {
+            padding: 6px 14px;
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--accent-emerald);
+        }
+
+        /* ═══════════════════════ TABS ═══════════════════════ */
+        .tab-bar {
+            display: flex;
+            gap: 4px;
+            background: var(--bg-card);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-sm);
+            padding: 4px;
+            margin-bottom: 32px;
+            animation: slideDown 0.7s ease-out;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 12px 24px;
+            border: none;
+            background: transparent;
+            color: var(--text-secondary);
+            font-family: 'Inter', sans-serif;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: var(--radius-xs);
+            transition: var(--transition);
+        }
+
+        .tab-btn:hover {
+            color: var(--text-primary);
+            background: rgba(255, 255, 255, 0.04);
+        }
+
+        .tab-btn.active {
+            background: var(--gradient-cyan);
+            color: white;
+            box-shadow: var(--glow-cyan);
+        }
+
+        .tab-content { display: none; animation: fadeIn 0.4s ease; }
+        .tab-content.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* ═══════════════════════ CARDS ═══════════════════════ */
+        .card {
+            background: var(--bg-card);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius);
+            padding: 28px;
+            transition: var(--transition);
+        }
+
+        .card:hover {
+            border-color: rgba(6, 182, 212, 0.2);
+            box-shadow: var(--glow-cyan);
+        }
+
+        .card-title {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card-title .icon {
+            font-size: 20px;
+        }
+
+        /* ═══════════════════════ TRADING PANEL ═══════════════════════ */
+        .trading-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+        }
+
+        .form-group { margin-bottom: 20px; }
+
+        .form-label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        .form-input, .form-select {
+            width: 100%;
+            padding: 12px 16px;
+            background: var(--bg-glass);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-xs);
+            color: var(--text-primary);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+            transition: var(--transition);
+            outline: none;
+        }
+
+        .form-input:focus, .form-select:focus {
+            border-color: var(--accent-cyan);
+            box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.1);
+        }
+
+        .form-select option { background: var(--bg-secondary); }
+
+        .side-toggle {
+            display: flex;
+            gap: 8px;
+        }
+
+        .side-btn {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid var(--border-glass);
+            background: var(--bg-glass);
+            color: var(--text-secondary);
+            font-family: 'Inter', sans-serif;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            border-radius: var(--radius-xs);
+            transition: var(--transition);
+        }
+
+        .side-btn.buy.active {
+            background: rgba(16, 185, 129, 0.15);
+            border-color: var(--accent-emerald);
+            color: var(--accent-emerald);
+            box-shadow: 0 0 20px rgba(16, 185, 129, 0.1);
+        }
+
+        .side-btn.sell.active {
+            background: rgba(239, 68, 68, 0.15);
+            border-color: var(--accent-red);
+            color: var(--accent-red);
+            box-shadow: 0 0 20px rgba(239, 68, 68, 0.1);
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: var(--radius-xs);
+            font-family: 'Inter', sans-serif;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: var(--transition);
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        .submit-btn.buy-btn {
+            background: var(--gradient-emerald);
+            color: white;
+            box-shadow: 0 4px 20px rgba(16, 185, 129, 0.2);
+        }
+
+        .submit-btn.sell-btn {
+            background: var(--gradient-red);
+            color: white;
+            box-shadow: 0 4px 20px rgba(239, 68, 68, 0.2);
+        }
+
+        .submit-btn:hover { transform: translateY(-2px); filter: brightness(1.1); }
+        .submit-btn:active { transform: translateY(0); }
+        .submit-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+        /* Response panel */
+        .response-panel {
+            margin-top: 20px;
+            padding: 20px;
+            background: var(--bg-glass);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-sm);
+            display: none;
+        }
+
+        .response-panel.visible { display: block; animation: fadeIn 0.4s ease; }
+
+        .response-panel.success { border-color: rgba(16, 185, 129, 0.4); }
+        .response-panel.error { border-color: rgba(239, 68, 68, 0.4); }
+
+        .response-title {
+            font-size: 14px;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+
+        .response-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 0;
+            font-size: 13px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+        }
+
+        .response-row:last-child { border-bottom: none; }
+        .response-key { color: var(--text-muted); }
+        .response-value { color: var(--text-primary); font-family: 'JetBrains Mono', monospace; font-weight: 500; }
+
+        /* ═══════════════════════ ORDER LOG ═══════════════════════ */
+        .order-log {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .log-entry {
+            padding: 14px 18px;
+            background: var(--bg-glass);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-xs);
+            margin-bottom: 8px;
+            font-size: 13px;
+            transition: var(--transition);
+        }
+
+        .log-entry:hover { border-color: rgba(6, 182, 212, 0.2); }
+
+        .log-meta {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 6px;
+        }
+
+        .log-time { color: var(--text-muted); font-family: 'JetBrains Mono', monospace; font-size: 11px; }
+        .log-status { font-weight: 600; font-size: 11px; padding: 2px 8px; border-radius: 10px; }
+        .log-status.filled { background: rgba(16, 185, 129, 0.15); color: var(--accent-emerald); }
+        .log-status.new { background: rgba(245, 158, 11, 0.15); color: var(--accent-amber); }
+        .log-status.error { background: rgba(239, 68, 68, 0.15); color: var(--accent-red); }
+
+        .log-details { color: var(--text-secondary); font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+
+        .empty-log {
+            text-align: center;
+            padding: 48px 20px;
+            color: var(--text-muted);
+        }
+
+        .empty-log .icon { font-size: 36px; margin-bottom: 12px; }
+
+        /* ═══════════════════════ INTERN / RESUME SECTION ═══════════════════════ */
+        .resume-header {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        .resume-name {
+            font-size: 32px;
+            font-weight: 800;
+            background: var(--gradient-cyan);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 8px;
+        }
+
+        .resume-contact {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 16px;
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .resume-contact a {
+            color: var(--accent-cyan);
+            text-decoration: none;
+            transition: var(--transition);
+        }
+
+        .resume-contact a:hover { color: var(--accent-emerald); }
+
+        .resume-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+        }
+
+        .resume-full { grid-column: 1 / -1; }
+
+        .section-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--accent-cyan);
+            margin-bottom: 16px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--border-glass);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .exp-item { margin-bottom: 16px; }
+        .exp-role { font-weight: 600; color: var(--text-primary); }
+        .exp-company { font-size: 13px; color: var(--accent-emerald); }
+        .exp-date { font-size: 12px; color: var(--text-muted); margin-bottom: 6px; }
+        .exp-list { list-style: none; padding: 0; }
+        .exp-list li { 
+            position: relative;
+            padding-left: 16px;
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+        }
+        .exp-list li::before { 
+            content: '▸'; 
+            position: absolute; 
+            left: 0; 
+            color: var(--accent-cyan); 
+        }
+
+        .skill-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .skill-tag {
+            padding: 4px 12px;
+            background: var(--bg-glass);
+            border: 1px solid var(--border-glass);
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            transition: var(--transition);
+        }
+
+        .skill-tag:hover {
+            border-color: var(--accent-cyan);
+            color: var(--accent-cyan);
+            background: rgba(6, 182, 212, 0.05);
+        }
+
+        .edu-item { margin-bottom: 12px; }
+        .edu-school { font-weight: 600; color: var(--text-primary); font-size: 14px; }
+        .edu-degree { font-size: 13px; color: var(--text-secondary); }
+        .edu-meta { font-size: 12px; color: var(--text-muted); }
+
+        .cert-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.03);
+        }
+        .cert-item:last-child { border-bottom: none; }
+        .cert-badge { 
+            width: 8px; height: 8px;
+            border-radius: 50%;
+            background: var(--accent-emerald);
+            flex-shrink: 0;
+        }
+        .cert-name { font-size: 13px; color: var(--text-primary); }
+        .cert-issuer { font-size: 12px; color: var(--text-muted); }
+
+        .project-item { margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid rgba(255,255,255,0.03); }
+        .project-item:last-child { border-bottom: none; }
+        .project-name { font-weight: 600; color: var(--text-primary); font-size: 14px; }
+        .project-tech { font-size: 12px; color: var(--accent-purple); margin: 4px 0 8px; }
+
+        /* ═══════════════════════ LOADING SPINNER ═══════════════════════ */
+        .spinner {
+            display: inline-block;
+            width: 16px; height: 16px;
+            border: 2px solid rgba(255,255,255,0.2);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ═══════════════════════ RESPONSIVE ═══════════════════════ */
+        @media (max-width: 900px) {
+            .trading-grid, .resume-grid { grid-template-columns: 1fr; }
+            .header { flex-direction: column; gap: 12px; text-align: center; }
+        }
+
+        @media (max-width: 600px) {
+            .app-container { padding: 12px; }
+            .card { padding: 20px; }
+        }
+
+        /* ═══════════════════════ PRICE INPUTS HIDE/SHOW ═══════════════════════ */
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+
+    <!-- ═══════════ HEADER ═══════════ -->
+    <header class="header">
+        <div class="header-brand">
+            <div class="header-logo">P</div>
+            <div>
+                <div class="header-title">PrimeTrade</div>
+                <div class="header-subtitle">Binance Futures Testnet</div>
+            </div>
+        </div>
+        <div class="header-badge">● TESTNET</div>
+    </header>
+
+    <!-- ═══════════ TABS ═══════════ -->
+    <div class="tab-bar">
+        <button class="tab-btn active" data-tab="trading" id="tab-trading">🔄 Trading Panel</button>
+        <button class="tab-btn" data-tab="log" id="tab-log">📋 Order Log</button>
+        <button class="tab-btn" data-tab="intern" id="tab-intern">👤 Intern Details</button>
+    </div>
+
+    <!-- ═══════════ TRADING TAB ═══════════ -->
+    <div class="tab-content active" id="trading">
+        <div class="trading-grid">
+            <!-- Order Form -->
+            <div class="card">
+                <div class="card-title"><span class="icon">⚡</span> Place Order</div>
+                <form id="orderForm">
+                    <div class="form-group">
+                        <label class="form-label" for="symbol">Symbol</label>
+                        <input class="form-input" type="text" id="symbol" value="BTCUSDT" placeholder="e.g. BTCUSDT" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Side</label>
+                        <div class="side-toggle">
+                            <button type="button" class="side-btn buy active" id="sideBuy" onclick="setSide('BUY')">BUY / LONG</button>
+                            <button type="button" class="side-btn sell" id="sideSell" onclick="setSide('SELL')">SELL / SHORT</button>
+                        </div>
+                        <input type="hidden" id="side" value="BUY">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="orderType">Order Type</label>
+                        <select class="form-select" id="orderType" onchange="togglePriceFields()">
+                            <option value="MARKET">MARKET</option>
+                            <option value="LIMIT">LIMIT</option>
+                            <option value="STOP_LIMIT">STOP LIMIT</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="quantity">Quantity</label>
+                        <input class="form-input" type="number" id="quantity" step="any" min="0" placeholder="0.001" required>
+                    </div>
+
+                    <div class="form-group hidden" id="priceGroup">
+                        <label class="form-label" for="price">Price</label>
+                        <input class="form-input" type="number" id="price" step="any" min="0" placeholder="50000">
+                    </div>
+
+                    <div class="form-group hidden" id="stopPriceGroup">
+                        <label class="form-label" for="stopPrice">Stop Price</label>
+                        <input class="form-input" type="number" id="stopPrice" step="any" min="0" placeholder="49000">
+                    </div>
+
+                    <button type="submit" class="submit-btn buy-btn" id="submitBtn">
+                        Place BUY Order
+                    </button>
+                </form>
+            </div>
+
+            <!-- Response Panel -->
+            <div class="card">
+                <div class="card-title"><span class="icon">📊</span> Order Response</div>
+                <div id="responsePanel" class="response-panel">
+                    <!-- filled dynamically -->
+                </div>
+                <div id="responsePlaceholder" class="empty-log">
+                    <div class="icon">📭</div>
+                    <div>Place an order to see the response here</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════ LOG TAB ═══════════ -->
+    <div class="tab-content" id="log">
+        <div class="card">
+            <div class="card-title"><span class="icon">📋</span> Order History</div>
+            <div class="order-log" id="orderLog">
+                <div class="empty-log">
+                    <div class="icon">📭</div>
+                    <div>No orders placed yet</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════ INTERN TAB ═══════════ -->
+    <div class="tab-content" id="intern">
+        <!-- Resume Header -->
+        <div class="resume-header">
+            <div class="resume-name">Vishwa Panchal</div>
+            <div class="resume-contact">
+                <span>📍 Bangalore, India</span>
+                <span>📞 +91 8277665467</span>
+                <a href="mailto:thevishwapanchal@gmail.com">✉️ thevishwapanchal@gmail.com</a>
+                <a href="https://linkedin.com/in/thevishwapanchal" target="_blank">🔗 LinkedIn</a>
+                <a href="https://github.com/vishwapanchal" target="_blank">🐙 GitHub</a>
+                <a href="https://thevishwapanchal.pages.dev" target="_blank">🌐 Portfolio</a>
+            </div>
+        </div>
+
+        <div class="resume-grid">
+            <!-- Summary -->
+            <div class="card resume-full">
+                <div class="section-title">Professional Summary</div>
+                <p style="font-size:14px; color:var(--text-secondary); line-height:1.8;">
+                    Backend Developer and Cloud Practitioner with hands-on experience in <strong>Python</strong>, <strong>FastAPI</strong>, and <strong>RESTful API</strong> development. 
+                    <strong>AWS Certified Solutions Architect – Associate</strong> with practical knowledge of EC2, RDS, S3, IAM, and CloudWatch. 
+                    Proficient in <strong>Docker</strong> containerization, <strong>Terraform</strong> infrastructure provisioning, <strong>Ansible</strong> configuration management, 
+                    and <strong>CI/CD pipeline</strong> setup using Jenkins and GitHub Actions. 
+                    Skilled in Linux server administration, Bash scripting, and database design with PostgreSQL and MongoDB. 
+                    Experienced in <strong>LLM-based</strong> application development.
+                </p>
+            </div>
+
+            <!-- Education -->
+            <div class="card">
+                <div class="section-title">Education</div>
+                <div class="edu-item">
+                    <div class="edu-school">R. V. College of Engineering</div>
+                    <div class="edu-degree">BE – Information Science and Engineering</div>
+                    <div class="edu-meta">CGPA: 8.1 / 10.0 | Sept 2024 – May 2027 | Bangalore</div>
+                </div>
+                <div class="edu-item">
+                    <div class="edu-school">Government Polytechnic</div>
+                    <div class="edu-degree">Diploma – Computer Science and Engineering</div>
+                    <div class="edu-meta">CGPA: 9.73 / 10.0 | Aug 2021 – May 2024 | Kalaburagi</div>
+                </div>
+            </div>
+
+            <!-- Certifications -->
+            <div class="card">
+                <div class="section-title">Certifications</div>
+                <div class="cert-item">
+                    <div class="cert-badge"></div>
+                    <div>
+                        <div class="cert-name">AWS Certified Solutions Architect – Associate</div>
+                        <div class="cert-issuer">Amazon Web Services • Feb 2026</div>
+                    </div>
+                </div>
+                <div class="cert-item">
+                    <div class="cert-badge" style="background:var(--accent-blue)"></div>
+                    <div>
+                        <div class="cert-name">Google Cloud Platform – Cloud Arcade Facilitator</div>
+                        <div class="cert-issuer">Google Cloud Skills Boost</div>
+                    </div>
+                </div>
+                <div class="cert-item">
+                    <div class="cert-badge" style="background:var(--accent-amber)"></div>
+                    <div>
+                        <div class="cert-name">Networking Fundamentals (TCP/IP, DNS, HTTP)</div>
+                        <div class="cert-issuer">Cisco Networking Academy</div>
+                    </div>
+                </div>
+                <div class="cert-item">
+                    <div class="cert-badge" style="background:var(--accent-purple)"></div>
+                    <div>
+                        <div class="cert-name">Data Structures and Algorithms in Python</div>
+                        <div class="cert-issuer">Udemy</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Experience -->
+            <div class="card resume-full">
+                <div class="section-title">Experience</div>
+                <div class="exp-item">
+                    <div class="exp-role">R&D Intern – Cloud Engineering & DevOps</div>
+                    <div class="exp-company">ProLEAP Academy</div>
+                    <div class="exp-date">Jan 2024 – Apr 2024 | Remote</div>
+                    <ul class="exp-list">
+                        <li>Selected as top performer among 60+ candidates for cloud infrastructure work involving AWS EC2 instance provisioning and Linux system administration on Ubuntu and RHEL</li>
+                        <li>Developed Bash shell scripts to automate server provisioning, user management, and environment setup across multiple deployment targets</li>
+                        <li>Built and deployed applications using Docker containers, managing images, volumes, networks, and multi-container configurations</li>
+                        <li>Set up CI/CD pipelines using Jenkins and GitHub Actions for automated code builds, testing, and deployment to AWS instances</li>
+                        <li>Provisioned and managed cloud infrastructure using Terraform and automated configuration management using Ansible playbooks</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Projects -->
+            <div class="card resume-full">
+                <div class="section-title">Projects</div>
+                <div class="project-item">
+                    <div class="project-name">Cloud-Hosted EL Management Platform</div>
+                    <div class="project-tech">AWS EC2 • FastAPI • PostgreSQL • MongoDB • Docker • Terraform</div>
+                    <ul class="exp-list">
+                        <li>Deployed a production-ready backend API on AWS EC2 using Docker, with IAM roles, Security Groups, and CloudWatch configured for access control and monitoring</li>
+                        <li>Engineered RESTful API endpoints using Python and FastAPI, connected to AWS RDS (PostgreSQL) for relational data and MongoDB for document storage</li>
+                        <li>Built an automated plagiarism detection module by integrating a FAISS vector database with a machine learning similarity model</li>
+                        <li>Handled end-to-end deployment: Linux server hardening, environment configuration, Nginx reverse proxy setup, and application logging</li>
+                    </ul>
+                </div>
+                <div class="project-item">
+                    <div class="project-name">Gram Sahayak – Digital Governance Platform</div>
+                    <div class="project-tech">FastAPI • MongoDB • WebSockets • Docker • Ansible</div>
+                    <ul class="exp-list">
+                        <li>Architected a microservices-based backend using Python, FastAPI, and MongoDB to digitize rural governance and administrative workflows</li>
+                        <li>Implemented real-time bidirectional communication with WebSockets for live notifications between platform administrators and users</li>
+                        <li>Developed location-aware features using MongoDB geospatial queries and 2dsphere indexes for service mapping and resource discovery</li>
+                        <li>Containerized all services with Docker and automated the build-deploy cycle using GitHub Actions CI/CD workflows</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Technical Skills -->
+            <div class="card resume-full">
+                <div class="section-title">Technical Skills</div>
+                
+                <div style="margin-bottom:14px;">
+                    <div style="font-size:12px;font-weight:600;color:var(--text-muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:1px;">Languages</div>
+                    <div class="skill-tags">
+                        <span class="skill-tag">Python</span>
+                        <span class="skill-tag">JavaScript</span>
+                        <span class="skill-tag">SQL</span>
+                        <span class="skill-tag">Bash / Shell</span>
+                        <span class="skill-tag">Java</span>
+                    </div>
+                </div>
+
+                <div style="margin-bottom:14px;">
+                    <div style="font-size:12px;font-weight:600;color:var(--text-muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:1px;">Backend</div>
+                    <div class="skill-tags">
+                        <span class="skill-tag">FastAPI</span>
+                        <span class="skill-tag">RESTful APIs</span>
+                        <span class="skill-tag">WebSockets</span>
+                        <span class="skill-tag">Microservices</span>
+                        <span class="skill-tag">Nginx</span>
+                    </div>
+                </div>
+
+                <div style="margin-bottom:14px;">
+                    <div style="font-size:12px;font-weight:600;color:var(--text-muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:1px;">Cloud (AWS)</div>
+                    <div class="skill-tags">
+                        <span class="skill-tag">EC2</span>
+                        <span class="skill-tag">S3</span>
+                        <span class="skill-tag">RDS</span>
+                        <span class="skill-tag">IAM</span>
+                        <span class="skill-tag">Lambda</span>
+                        <span class="skill-tag">CloudWatch</span>
+                        <span class="skill-tag">VPC</span>
+                    </div>
+                </div>
+
+                <div style="margin-bottom:14px;">
+                    <div style="font-size:12px;font-weight:600;color:var(--text-muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:1px;">DevOps & Tools</div>
+                    <div class="skill-tags">
+                        <span class="skill-tag">Docker</span>
+                        <span class="skill-tag">Jenkins</span>
+                        <span class="skill-tag">GitHub Actions</span>
+                        <span class="skill-tag">Git</span>
+                        <span class="skill-tag">CI/CD</span>
+                        <span class="skill-tag">Terraform</span>
+                        <span class="skill-tag">Ansible</span>
+                        <span class="skill-tag">Linux</span>
+                    </div>
+                </div>
+
+                <div style="margin-bottom:14px;">
+                    <div style="font-size:12px;font-weight:600;color:var(--text-muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:1px;">Databases</div>
+                    <div class="skill-tags">
+                        <span class="skill-tag">PostgreSQL</span>
+                        <span class="skill-tag">MongoDB</span>
+                        <span class="skill-tag">MySQL</span>
+                        <span class="skill-tag">Redis</span>
+                        <span class="skill-tag">FAISS</span>
+                    </div>
+                </div>
+
+                <div>
+                    <div style="font-size:12px;font-weight:600;color:var(--text-muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:1px;">AI / ML</div>
+                    <div class="skill-tags">
+                        <span class="skill-tag">OpenAI API</span>
+                        <span class="skill-tag">LLM Integration</span>
+                        <span class="skill-tag">Vector Embeddings</span>
+                        <span class="skill-tag">Semantic Search</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    // ═══════════ STATE ═══════════
+    let currentSide = 'BUY';
+    const orderHistory = [];
+
+    // ═══════════ TAB SWITCHING ═══════════
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            btn.classList.add('active');
+            document.getElementById(btn.dataset.tab).classList.add('active');
+        });
+    });
+
+    // ═══════════ SIDE TOGGLE ═══════════
+    function setSide(side) {
+        currentSide = side;
+        document.getElementById('side').value = side;
+        const buyBtn = document.getElementById('sideBuy');
+        const sellBtn = document.getElementById('sideSell');
+        const submitBtn = document.getElementById('submitBtn');
+
+        buyBtn.classList.toggle('active', side === 'BUY');
+        sellBtn.classList.toggle('active', side === 'SELL');
+
+        if (side === 'BUY') {
+            submitBtn.className = 'submit-btn buy-btn';
+            submitBtn.textContent = 'Place BUY Order';
+        } else {
+            submitBtn.className = 'submit-btn sell-btn';
+            submitBtn.textContent = 'Place SELL Order';
+        }
+    }
+
+    // ═══════════ PRICE FIELDS TOGGLE ═══════════
+    function togglePriceFields() {
+        const type = document.getElementById('orderType').value;
+        const priceGroup = document.getElementById('priceGroup');
+        const stopGroup = document.getElementById('stopPriceGroup');
+
+        priceGroup.classList.toggle('hidden', type === 'MARKET');
+        stopGroup.classList.toggle('hidden', type !== 'STOP_LIMIT');
+    }
+
+    // ═══════════ FORM SUBMIT ═══════════
+    document.getElementById('orderForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const submitBtn = document.getElementById('submitBtn');
+        const origText = submitBtn.textContent;
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="spinner"></span> Processing...';
+
+        const payload = {
+            symbol: document.getElementById('symbol').value.trim().toUpperCase(),
+            side: currentSide,
+            orderType: document.getElementById('orderType').value,
+            quantity: document.getElementById('quantity').value,
+            price: document.getElementById('price').value || null,
+            stopPrice: document.getElementById('stopPrice').value || null,
+        };
+
+        try {
+            const res = await fetch('/api/order', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+            });
+
+            const data = await res.json();
+            showResponse(data);
+            addToLog(payload, data);
+        } catch (err) {
+            showResponse({ success: false, error: 'Network error: ' + err.message });
+            addToLog(payload, { success: false, error: err.message });
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.textContent = origText;
+        }
+    });
+
+    // ═══════════ SHOW RESPONSE ═══════════
+    function showResponse(data) {
+        const panel = document.getElementById('responsePanel');
+        const placeholder = document.getElementById('responsePlaceholder');
+        placeholder.style.display = 'none';
+
+        let html = '';
+        if (data.success) {
+            panel.className = 'response-panel visible success';
+            html = '<div class="response-title" style="color:var(--accent-emerald)">✅ Order Placed Successfully</div>';
+            const order = data.order;
+            const fields = [
+                ['Order ID', order.orderId],
+                ['Status', order.status],
+                ['Symbol', order.symbol],
+                ['Side', order.side],
+                ['Type', order.type],
+                ['Quantity', order.origQty],
+                ['Executed Qty', order.executedQty],
+                ['Price', order.price],
+                ['Avg Price', order.avgPrice],
+            ];
+            fields.forEach(([k, v]) => {
+                if (v !== null && v !== undefined) {
+                    html += `<div class="response-row"><span class="response-key">${k}</span><span class="response-value">${v}</span></div>`;
+                }
+            });
+        } else {
+            panel.className = 'response-panel visible error';
+            html = `<div class="response-title" style="color:var(--accent-red)">❌ Order Failed</div>
+                    <div style="color:var(--text-secondary);font-size:13px;margin-top:8px;">${data.error}</div>`;
+        }
+
+        panel.innerHTML = html;
+    }
+
+    // ═══════════ ORDER LOG ═══════════
+    function addToLog(payload, response) {
+        orderHistory.unshift({ payload, response, time: new Date() });
+        renderLog();
+    }
+
+    function renderLog() {
+        const logEl = document.getElementById('orderLog');
+        if (orderHistory.length === 0) {
+            logEl.innerHTML = '<div class="empty-log"><div class="icon">📭</div><div>No orders placed yet</div></div>';
+            return;
+        }
+
+        logEl.innerHTML = orderHistory.map(entry => {
+            const { payload, response, time } = entry;
+            const timeStr = time.toLocaleTimeString();
+            let statusClass = 'error';
+            let statusText = 'ERROR';
+            if (response.success) {
+                statusText = response.order.status || 'OK';
+                statusClass = statusText === 'FILLED' ? 'filled' : 'new';
+            }
+            return `
+                <div class="log-entry">
+                    <div class="log-meta">
+                        <span class="log-time">${timeStr}</span>
+                        <span class="log-status ${statusClass}">${statusText}</span>
+                    </div>
+                    <div class="log-details">
+                        ${payload.side} ${payload.orderType} ${payload.symbol} × ${payload.quantity}
+                        ${response.success ? ' → #' + response.order.orderId : ' → ' + (response.error || 'Failed')}
+                    </div>
+                </div>`;
+        }).join('');
+    }
+</script>
+
+</body>
+</html>
